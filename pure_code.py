@@ -83,8 +83,52 @@ class DateFinder:
             return self.days[(dooms_day_date + diff) % 7]
 
     def calculate_weekday_val(self, date:str):
-        # this is horrible horrible code bc im basicly just walking backwards, but i wrote "calculate_weekday" first
-        return self.days.index(self.calculate_weekday(date))
+        
+        year = date[6:]
+        
+        dooms_day_date = self.calculate_doomsday_date(year)
+
+        leap = self.is_leap(int(year))
+        day_month = date[0:5]
+
+        # if we were lucky enough to get and actual doomsday
+        if day_month in self.norm_doomse_days or (not leap and day_month in self.changing_doomse_days["not_leap"]) or (leap and day_month in self.changing_doomse_days["leap"]):
+            return dooms_day_date
+        
+        day = date[0:2]
+        month = date[3:5]
+
+        int_month = int(month)
+
+        # handles for feb and jan
+        if int_month == 2:
+            if leap:
+                doomse_day = int(self.changing_doomse_days["leap"][1][0:2])
+                diff = int(day) - doomse_day
+
+                return (dooms_day_date + diff) % 7
+            else:
+                doomse_day = int(self.changing_doomse_days["not_leap"][1][0:2])
+                diff = int(day) - doomse_day
+
+                return (dooms_day_date + diff) % 7
+        elif int_month == 1:
+            if leap:
+                doomse_day = int(self.changing_doomse_days["leap"][0][0:2])
+                diff = int(day) - doomse_day
+
+                return (dooms_day_date + diff) % 7
+            else:
+                doomse_day = int(self.changing_doomse_days["not_leap"][0][0:2])
+                diff = int(day) - doomse_day
+
+                return (dooms_day_date + diff) % 7
+        else:
+            month_index = self.rel_months.index(month)
+            doomse_day = int(self.norm_doomse_days[month_index][0:2])
+            diff = int(day) - doomse_day
+
+            return (dooms_day_date + diff) % 7
     
     def generate_random_date(self):
         month = rn.randint(1, 12)
@@ -93,6 +137,8 @@ class DateFinder:
             day_range = 29
         elif month == 2:
             day_range = 28
+        elif month == 4 or month == 6 or month == 9 or month == 11:
+            day_range = 30
         else:
             day_range = 31
         day = rn.randint(1, day_range)
@@ -111,7 +157,8 @@ class DateFinder:
     
     def generate_random_day(self):
         date = self.generate_random_date()
-        return date, self.calculate_weekday(date)
+        day_val = self.calculate_weekday_val(date)
+        return {"date": date, "day_val": day_val, "day": self.days[day_val]}
 
 class Ui:
     def __init__(self) -> None:
